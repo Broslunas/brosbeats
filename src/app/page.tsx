@@ -5,6 +5,7 @@ import { authOptions } from "./api/auth/[...nextauth]/route";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
+import { LoadingState } from "@/components/LoadingState";
 
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
@@ -61,17 +62,7 @@ export default async function Home() {
   const data = await getData(session.user.email);
 
   if (!data) {
-    return (
-      <div className="text-center py-20 animate-in fade-in">
-        <h2 className="text-2xl font-bold mb-4">Welcome, {session.user.name}</h2>
-        <p className="text-white/60 mb-8">We are crunching your numbers for the first time...</p>
-        <GlassWidget className="p-8 max-w-md mx-auto flex flex-col items-center gap-4">
-           <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-           <p className="text-sm text-green-400 animate-pulse">Analyzing Library...</p>
-        </GlassWidget>
-        {/* Force a sync if it's taking too long via client side would be better, but user just logged in so auto-sync should happen */}
-      </div>
-    );
+    return <LoadingState userName={session.user.name || undefined} />;
   }
 
   const { top_artists, top_tracks, diversity_score, top_genres } = data;
