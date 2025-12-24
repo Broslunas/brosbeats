@@ -12,6 +12,7 @@ import { TopTracksWidget } from "@/components/widgets/TopTracksWidget";
 import { TopAlbumsWidget } from "@/components/widgets/TopAlbumsWidget";
 import { TopGenresWidget } from "@/components/widgets/TopGenresWidget";
 import { TopArtistsListWidget } from "@/components/widgets/TopArtistsListWidget";
+import { ListeningTimeWidget } from "@/components/widgets/ListeningTimeWidget";
 import { NowPlayingWidget } from "@/components/widgets/NowPlayingWidget";
 import { redirect } from "next/navigation";
 
@@ -91,16 +92,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="md:col-span-1 md:row-span-1">
-             {/* Widget 5: Quick Action - Moved here to fill gap */}
-             <GlassWidget className="h-full flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
-                <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <Play className="fill-current translate-x-0.5 w-5 h-5" />
-                </div>
-                <div>
-                    <h3 className="font-bold text-lg leading-tight">Create Playlist</h3>
-                    <p className="text-xs text-white/50 mt-1">Based on recent</p>
-                </div>
-            </GlassWidget>
+             <ListeningTimeWidget />
         </div>
 
         {/* Row 2: Top Tracks List (2 col) + Top Artists List (2 col) */}

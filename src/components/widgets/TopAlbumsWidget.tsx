@@ -39,7 +39,7 @@ export function TopAlbumsWidget() {
         <TimeRangeSelector value={range} onChange={setRange} className="w-full justify-between" />
       </div>
 
-      <div className="overflow-y-auto flex-1 p-3 grid grid-cols-2 gap-3 content-start">
+      <div className="overflow-y-auto flex-1 p-3 grid grid-cols-2 gap-3 content-start custom-scrollbar max-h-[200px]">
          {loading ? (
              Array.from({length: 4}).map((_, i) => (
                  <div key={i} className="aspect-square bg-white/5 rounded-lg animate-pulse" />

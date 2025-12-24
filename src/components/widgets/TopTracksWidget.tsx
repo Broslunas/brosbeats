@@ -39,7 +39,7 @@ export function TopTracksWidget() {
         <TimeRangeSelector value={range} onChange={setRange} className="w-full justify-between" />
       </div>
 
-      <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
+      <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar max-h-[400px]">
         {loading ? (
              Array.from({length: 8}).map((_, i) => (
                  <div key={i} className="flex items-center gap-3 p-2 animate-pulse">

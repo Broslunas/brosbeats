@@ -37,7 +37,7 @@ export function TopGenresWidget() {
          <TimeRangeSelector value={range} onChange={setRange} className="w-full justify-between" />
       </div>
 
-       <div className="flex-1 overflow-y-auto custom-scrollbar">
+       <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[200px]">
          {loading ? (
              <div className="space-y-3 pt-2">
                  {[1,2,3,4,5].map(i => (
