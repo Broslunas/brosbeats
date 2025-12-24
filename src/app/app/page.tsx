@@ -92,7 +92,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="md:col-span-1 md:row-span-1">
-             <ListeningTimeWidget />
+             <ListeningTimeWidget lifetimeMinutes={data.total_minutes_listened} />
         </div>
 
         {/* Row 2: Top Tracks List (2 col) + Top Artists List (2 col) */}

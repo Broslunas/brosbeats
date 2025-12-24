@@ -6,7 +6,11 @@ import { Clock, History } from "lucide-react";
 
 type TimeRange = "1h" | "24h" | "All"; // 'All' is limited to last 50 tracks via API
 
-export function ListeningTimeWidget() {
+interface ListeningTimeWidgetProps {
+    lifetimeMinutes?: number;
+}
+
+export function ListeningTimeWidget({ lifetimeMinutes = 0 }: ListeningTimeWidgetProps) {
   const [range, setRange] = useState<TimeRange>("24h");
   const [minutes, setMinutes] = useState(0);
   const [trackCount, setTrackCount] = useState(0);
@@ -14,6 +18,15 @@ export function ListeningTimeWidget() {
 
   useEffect(() => {
     async function fetchData() {
+      // If "All", we use the passed prop (which comes from DB accumulator)
+      // BUT we can't calculate "Total Tracks" easily for All time without a counter.
+      // For now, if "All", we show minutes and maybe hide track count or show "Tracking since..."
+      if (range === "All") {
+          setMinutes(lifetimeMinutes);
+          setLoading(false);
+          return;
+      }
+
       setLoading(true);
       try {
         const res = await fetch(`/api/spotify/recently-played?limit=50`);
@@ -43,7 +56,7 @@ export function ListeningTimeWidget() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, lifetimeMinutes]);
 
   return (
     <GlassWidget className="p-5 flex flex-col justify-between h-full min-h-[160px] bg-gradient-to-br from-blue-500/10 to-transparent">

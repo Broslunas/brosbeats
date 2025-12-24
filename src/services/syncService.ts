@@ -23,7 +23,35 @@ export class SyncService {
         spotifyApi.getRecentlyPlayed(accessToken, 50),
       ]);
 
-      // 2. Upsert User into Supabase
+      // 2. Persist User & Stats
+        // First get current user state to check last_played_at
+        const { data: existingUser } = await supabaseAdmin
+            .from("users")
+            .select("total_listened_ms, last_played_at")
+            .eq("spotify_id", spotifyId)
+            .single();
+
+      // Calculate NEW listening time since last sync
+      let newMs = 0;
+      let lastPlayedTime = existingUser?.last_played_at ? new Date(existingUser.last_played_at).getTime() : 0;
+      let newestTrackTime = lastPlayedTime;
+
+      if (recentlyPlayed.items.length > 0) {
+          // Items are usually ordered by played_at desc (newest first)
+          // We want to process them, ignoring ones older than lastPlayedTime
+          recentlyPlayed.items.forEach(item => {
+              const pTime = new Date(item.played_at).getTime();
+              if (pTime > lastPlayedTime) {
+                  newMs += item.track.duration_ms;
+              }
+              if (pTime > newestTrackTime) {
+                  newestTrackTime = pTime;
+              }
+          });
+      }
+
+      const currentTotalMs = (existingUser?.total_listened_ms || 0) + newMs;
+
       const { data: user, error: userError } = await supabaseAdmin
         .from("users")
         .upsert({
@@ -32,6 +60,9 @@ export class SyncService {
           name: profile.display_name,
           avatar_url: profile.images?.[0]?.url,
           updated_at: new Date().toISOString(),
+          // Update the accumulator columns
+          total_listened_ms: currentTotalMs,
+          last_played_at: new Date(newestTrackTime).toISOString()
         }, { onConflict: "spotify_id" })
         .select()
         .single();
@@ -45,13 +76,14 @@ export class SyncService {
       const diversityScore = this.calculateDiversityScore(topArtists.items);
       const topGenres = this.extractTopGenres(topArtists.items);
       
-      // Calculate recent listening time (last 50 tracks)
-      const recentMinutes = Math.round(recentlyPlayed.items.reduce((acc, item) => acc + item.track.duration_ms, 0) / 1000 / 60);
+      // Calculate recent listening time (last 50 tracks) - Not used for total anymore, but useful for 24h stats if we wanted to snapshot it specifically
+      // const recentMinutes = Math.round(recentlyPlayed.items.reduce((acc, item) => acc + item.track.duration_ms, 0) / 1000 / 60);
+
 
       const snapshotData = {
         user_id: user.id,
         snapshot_date: new Date().toISOString(),
-        total_minutes_listened: recentMinutes,
+        total_minutes_listened: Math.round(user.total_listened_ms / 1000 / 60), // Store Minutes in snapshot for easy reading
         total_tracks_played: recentlyPlayed.items.length, 
         top_artists: topArtists.items.slice(0, 10).map(a => ({ name: a.name, id: a.id, image: a.images[0]?.url })),
         top_tracks: topTracks.items.slice(0, 10).map(t => ({ name: t.name, artist: t.artists[0].name, album: t.album.images[0]?.url })),

@@ -10,7 +10,11 @@ create table public.users (
   avatar_url text,
   spotify_id text unique,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  
+  -- Persistent Tracker Columns
+  total_listened_ms bigint default 0,
+  last_played_at timestamp with time zone -- Cursor for the latest track we've counted
 );
 
 -- 2. PRIVACY SETTINGS Table
