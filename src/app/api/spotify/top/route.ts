@@ -49,6 +49,22 @@ export async function GET(req: Request) {
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
     } 
+    else if (type === "genres") {
+       // Genres are derived from Top Artists
+       const res = await spotifyApi.getTopArtists(session.accessToken, spotifyRange, 50);
+       const genreCounts: Record<string, number> = {};
+       
+       res.items.forEach(artist => {
+         artist.genres.forEach(genre => {
+           genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+         });
+       });
+       
+       data = Object.entries(genreCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, limit)
+        .map(([name, count]) => ({ name, count }));
+    } 
     else {
       return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }

@@ -10,6 +10,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { TopArtistsWidget } from "@/components/widgets/TopArtistsWidget";
 import { TopTracksWidget } from "@/components/widgets/TopTracksWidget";
 import { TopAlbumsWidget } from "@/components/widgets/TopAlbumsWidget";
+import { TopGenresWidget } from "@/components/widgets/TopGenresWidget";
 
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
@@ -87,17 +88,7 @@ export default async function Home() {
         <TopArtistsWidget />
 
         {/* Widget 2: Diversity Score (Keep static for now as it needs complex analysis) */}
-        <GlassWidget className="md:col-span-2 row-span-1 p-6 flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10">
-           <div>
-             <div className="flex items-center gap-2 mb-2">
-               <BarChart2 className="w-5 h-5 text-purple-400" />
-               <h3 className="font-semibold text-white/80">Sonic Diversity</h3>
-             </div>
-             <p className="text-sm text-white/50 max-w-[200px]">
-               {diversity_score > 0.7 ? "You're an explorer! wide taste." : "You know what you like and stick to it."}
-             </p>
-           </div>
-           
+        <GlassWidget className="md:col-span-2 row-span-1 p-6 flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10">            
            <div className="relative w-24 h-24 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path className="text-white/10" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
@@ -114,23 +105,8 @@ export default async function Home() {
            </div>
         </GlassWidget>
 
-        {/* Widget 3: Top Genres (Static from snapshot is fine for now, avoiding overload) */}
-        <GlassWidget className="md:col-span-1 row-span-1 p-5 overflow-hidden">
-           <div className="flex items-center gap-2 mb-4 text-white/70">
-             <Disc className="w-4 h-4" />
-             <span className="text-sm font-semibold">Top Genres</span>
-           </div>
-           <ul className="space-y-3">
-             {top_genres?.slice(0, 3).map((genre: any, i: number) => (
-               <li key={i} className="flex items-center justify-between text-sm">
-                 <span className="capitalize">{genre.name}</span>
-                 <div className="h-1.5 w-16 bg-white/10 rounded-full overflow-hidden">
-                   <div className="h-full bg-white/50" style={{ width: `${Math.random() * 50 + 50}%` }} />
-                 </div>
-               </li>
-             ))}
-           </ul>
-        </GlassWidget>
+        {/* Widget 3: Top Genres (Dynamic) */}
+        <TopGenresWidget />
 
         {/* Widget 4: Top Tracks (Dynamic) */}
         <TopTracksWidget />
