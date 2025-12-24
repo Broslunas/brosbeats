@@ -11,6 +11,7 @@ import { TopArtistsWidget } from "@/components/widgets/TopArtistsWidget";
 import { TopTracksWidget } from "@/components/widgets/TopTracksWidget";
 import { TopAlbumsWidget } from "@/components/widgets/TopAlbumsWidget";
 import { TopGenresWidget } from "@/components/widgets/TopGenresWidget";
+import { TopArtistsListWidget } from "@/components/widgets/TopArtistsListWidget";
 import { NowPlayingWidget } from "@/components/widgets/NowPlayingWidget";
 import { redirect } from "next/navigation";
 
@@ -75,13 +76,20 @@ export default async function DashboardPage() {
         {/* Row 0: Now Playing (Full Width, conditionally rendered inside component) */}
         <NowPlayingWidget />
 
-        {/* Row 1: Top Artist (2 cols) + Top Genres (1 col) + Quick Action (1 col) */}
-        <div className="md:col-span-2 md:row-span-2">
+        {/* Row 1: Top Artist Hero (1 col) + Top Genres (1 col) + Top Albums (1 col) + Action (1 col) */}
+        
+        <div className="md:col-span-1 md:row-span-1">
             <TopArtistsWidget />
         </div>
+        
         <div className="md:col-span-1 md:row-span-1">
              <TopGenresWidget />
         </div>
+
+        <div className="md:col-span-1 md:row-span-1">
+             <TopAlbumsWidget />
+        </div>
+
         <div className="md:col-span-1 md:row-span-1">
              {/* Widget 5: Quick Action - Moved here to fill gap */}
              <GlassWidget className="h-full flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
@@ -95,17 +103,14 @@ export default async function DashboardPage() {
             </GlassWidget>
         </div>
 
-        {/* Row 2: Top Tracks (1 col) + Top Albums (1 col) ... wait, let's re-arrange for better fit */}
-        {/* Let's try:
-            Row 1: Artist (2x2), Tracks (1x2), Genres (1x1) / Albums (1x1)
-        */}
+        {/* Row 2: Top Tracks List (2 col) + Top Artists List (2 col) */}
         
-        <div className="md:col-span-1 md:row-span-2 relative">
+        <div className="md:col-span-2 md:row-span-2 relative">
              <TopTracksWidget />
         </div>
         
-        <div className="md:col-span-1 md:row-span-1">
-             <TopAlbumsWidget />
+        <div className="md:col-span-2 md:row-span-2 relative">
+             <TopArtistsListWidget />
         </div>
 
       </div>
