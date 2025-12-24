@@ -16,10 +16,11 @@ export class SyncService {
 
     try {
       // 1. Fetch Data from Spotify
-      const [profile, topArtists, topTracks] = await Promise.all([
+      const [profile, topArtists, topTracks, recentlyPlayed] = await Promise.all([
         spotifyApi.getProfile(accessToken),
         spotifyApi.getTopArtists(accessToken, "medium_term", 50),
         spotifyApi.getTopTracks(accessToken, "medium_term", 50),
+        spotifyApi.getRecentlyPlayed(accessToken, 50),
       ]);
 
       // 2. Upsert User into Supabase
@@ -43,11 +44,15 @@ export class SyncService {
       // Calculate simple metrics for now
       const diversityScore = this.calculateDiversityScore(topArtists.items);
       const topGenres = this.extractTopGenres(topArtists.items);
+      
+      // Calculate recent listening time (last 50 tracks)
+      const recentMinutes = Math.round(recentlyPlayed.items.reduce((acc, item) => acc + item.track.duration_ms, 0) / 1000 / 60);
 
       const snapshotData = {
         user_id: user.id,
         snapshot_date: new Date().toISOString(),
-        total_tracks_played: 0, // Cannot get this easily from API anymore without full history crawl
+        total_minutes_listened: recentMinutes,
+        total_tracks_played: recentlyPlayed.items.length, 
         top_artists: topArtists.items.slice(0, 10).map(a => ({ name: a.name, id: a.id, image: a.images[0]?.url })),
         top_tracks: topTracks.items.slice(0, 10).map(t => ({ name: t.name, artist: t.artists[0].name, album: t.album.images[0]?.url })),
         top_genres: topGenres,

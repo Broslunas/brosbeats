@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { GlassWidget, GlassHeader, GlassContent } from "@/components/ui/GlassWidget";
-import { GenreChart } from "@/components/GenreChart";
-import { ListeningTimeWidget } from "@/components/ListeningTimeWidget";
+
+
 import Image from "next/image";
 import { Music2, Lock } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -101,9 +101,11 @@ export default async function UserProfile({ params }: { params: Promise<{ name: 
       {/* Stats Grid - Reusing components but read-only */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
         
-        {/* Top Artist */}
-        {stats?.top_artists?.[0] && (
-          <GlassWidget className="md:col-span-2 md:row-span-2 relative overflow-hidden group">
+         {/* Row 1: Top Artist 1x1, Genres 1x1, Albums 1x1 (mocked if missing in snapshot), ListeningTime 1x1 */}
+        
+        {/* Widget 1: Top Artist (Minified 1x1) */}
+        {stats?.top_artists?.[0] ? (
+          <GlassWidget className="md:col-span-1 md:row-span-1 relative overflow-hidden group min-h-[160px]">
              <div className="absolute inset-0">
                <Image 
                  src={stats.top_artists[0].image || '/placeholder.png'} 
@@ -113,30 +115,54 @@ export default async function UserProfile({ params }: { params: Promise<{ name: 
                />
                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
             </div>
-            <div className="relative z-10 h-full flex flex-col justify-end p-6">
-               <span className="bg-white/20 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded w-fit mb-2">#1 ARTIST</span>
-               <h3 className="text-4xl font-bold">{stats.top_artists[0].name}</h3>
+            <div className="relative z-10 h-full flex flex-col justify-end p-4">
+               <span className="bg-white/20 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-2">#1 ARTIST</span>
+               <h3 className="text-2xl font-bold truncate">{stats.top_artists[0].name}</h3>
             </div>
           </GlassWidget>
-        )}
+        ) : <div className="md:col-span-1 bg-white/5 rounded-2xl" />}
 
-        {/* Listening Time */}
-        <ListeningTimeWidget 
-            totalMinutes={stats?.total_minutes_listened || 0} 
-            totalTracks={stats?.total_tracks_played || 0} 
-        />
+         {/* Widget 2: Top Genres 1x1 */}
+         <GlassWidget className="md:col-span-1 md:row-span-1 p-5 overflow-hidden flex flex-col min-h-[170px]">
+            <div className="flex items-center gap-2 mb-2 text-white/70 border-b border-white/5 pb-2">
+                 <span className="text-sm font-semibold">Top Genres</span>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[200px]">
+                <ul className="space-y-3 pt-2">
+                    {mappedGenres.slice(0, 5).map((genre: any, i: number) => (
+                    <li key={i} className="flex items-center justify-between text-sm">
+                        <span className="capitalize text-white/80">{genre.name}</span>
+                        <div className="h-1.5 w-12 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-white/50" style={{ width: `${Math.min(100, (genre.count / (mappedGenres[0]?.count || 1)) * 100)}%` }} />
+                        </div>
+                    </li>
+                    ))}
+                </ul>
+            </div>
+         </GlassWidget>
 
-        {/* Genre Chart */}
-        <GenreChart genres={mappedGenres} />
+        {/* Widget 4: Listening Time (Static from snapshot) */}
+        <div className="md:col-span-1 md:row-span-1">
+             <GlassWidget className="p-5 flex flex-col justify-center h-full bg-gradient-to-br from-blue-500/10 to-transparent">
+                 <h3 className="text-3xl font-bold text-white mb-1">
+                     {Math.round((stats?.total_minutes_listened || 0) / 60)} <span className="text-sm font-normal text-white/50">hrs</span>
+                 </h3>
+                 <p className="text-xs text-blue-200/60">Recent tracked time</p>
+             </GlassWidget>
+        </div>
+        
+        {/* Placeholder for Albums or empty slot to maintain grid balance  */}
+        <div className="md:col-span-1 md:row-span-1 bg-white/5 rounded-2xl animate-pulse" />
 
-         {/* Top Tracks List */}
+
+         {/* Row 2: Top Tracks List 2x2 */}
          <GlassWidget className="md:col-span-2 md:row-span-2 overflow-hidden flex flex-col">
-            <GlassHeader>
+            <GlassHeader className="flex justify-between items-center bg-white/5">
                <span className="font-semibold flex items-center gap-2">
                  <Music2 className="w-4 h-4" /> Top Tracks
                </span>
             </GlassHeader>
-            <div className="overflow-y-auto flex-1 p-2 space-y-1 max-h-[300px]">
+            <div className="overflow-y-auto flex-1 p-2 space-y-1 max-h-[400px] custom-scrollbar">
               {stats?.top_tracks?.map((track: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors">
                   <div className="text-xs text-white/30 w-4 font-mono">{i + 1}</div>
@@ -153,7 +179,30 @@ export default async function UserProfile({ params }: { params: Promise<{ name: 
               ))}
             </div>
         </GlassWidget>
-
+        
+        {/* Row 2: Top Artists List 2x2 */}
+         <GlassWidget className="md:col-span-2 md:row-span-2 overflow-hidden flex flex-col">
+            <GlassHeader className="flex justify-between items-center bg-white/5">
+               <span className="font-semibold flex items-center gap-2">
+                 <Music2 className="w-4 h-4" /> Top Artists
+               </span>
+            </GlassHeader>
+            <div className="overflow-y-auto flex-1 p-2 space-y-1 max-h-[400px] custom-scrollbar">
+              {stats?.top_artists?.map((artist: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors">
+                  <div className="text-xs text-white/30 w-4 font-mono">{i + 1}</div>
+                   <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-white/10">
+                     {artist.image && (
+                       <Image src={artist.image} alt={artist.name} fill className="object-cover" />
+                     )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate text-white/90">{artist.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+        </GlassWidget>
       </div>
     </div>
   );
