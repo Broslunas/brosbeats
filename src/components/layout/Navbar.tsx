@@ -4,6 +4,7 @@ import { Menu, Home, BarChart2, MessageSquare, Settings, Share2 } from "lucide-r
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "../ThemeToggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,12 +20,15 @@ export function Navbar() {
            <span className="font-bold text-sm tracking-wide">Spotify AI</span>
         </div>
         
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 hover:bg-white/10 rounded-full transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Dropdown */}

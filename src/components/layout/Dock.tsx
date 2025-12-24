@@ -4,6 +4,8 @@ import { Home, BarChart2, MessageSquare, Settings, User, Share2 } from "lucide-r
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { ThemeToggle } from "../ThemeToggle";
 
 export function Dock() {
   return (
@@ -16,6 +18,7 @@ export function Dock() {
         
         <div className="w-[1px] h-8 bg-white/10 mx-1" /> {/* Divider */}
         
+        <ThemeToggle />
         <DockItem href="/profile" icon={User} label="Profile" />
         <DockItem href="/settings" icon={Settings} label="Settings" />
       </div>
@@ -26,13 +29,17 @@ export function Dock() {
 function DockItem({ href, icon: Icon, label }: { href: string; icon: any; label: string }) {
   const pathname = usePathname();
   const isActive = pathname === href;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <Link 
       href={href}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
         "group relative p-3 rounded-xl transition-all duration-300 hover:bg-white/10",
-        isActive ? "bg-white/10" : "bg-transparent"
+        isActive ? "bg-white/10" : "bg-transparent",
+        isHovered && "scale-125" // Magnification effect
       )}
     >
       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/80 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">

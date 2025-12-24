@@ -7,12 +7,12 @@ interface GlassWidgetProps extends React.HTMLAttributes<HTMLDivElement> {
   intensity?: "low" | "medium" | "high";
 }
 
-export function GlassWidget({ 
+export const GlassWidget = React.forwardRef<HTMLDivElement, GlassWidgetProps>(({ 
   children, 
   className, 
   intensity = "medium",
   ...props 
-}: GlassWidgetProps) {
+}, ref) => {
   
   const intensityClasses = {
     low: "bg-white/5 backdrop-blur-sm",
@@ -22,6 +22,7 @@ export function GlassWidget({
 
   return (
     <div
+      ref={ref}
       className={cn(
         "rounded-2xl border border-white/10 shadow-lg transition-all duration-300 hover:border-white/20",
         intensityClasses[intensity],
@@ -32,7 +33,8 @@ export function GlassWidget({
       {children}
     </div>
   );
-}
+});
+GlassWidget.displayName = "GlassWidget";
 
 export function GlassHeader({ children, className }: { children: React.ReactNode, className?: string }) {
   return (
