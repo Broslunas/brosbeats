@@ -7,6 +7,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { LoadingState } from "@/components/LoadingState";
 import { RefreshButton } from "@/components/RefreshButton";
+import { TopArtistsWidget } from "@/components/widgets/TopArtistsWidget";
+import { TopTracksWidget } from "@/components/widgets/TopTracksWidget";
+import { TopAlbumsWidget } from "@/components/widgets/TopAlbumsWidget";
 
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
@@ -66,7 +69,7 @@ export default async function Home() {
     return <LoadingState userName={session.user.name || undefined} />;
   }
 
-  const { top_artists, top_tracks, diversity_score, top_genres } = data;
+  const { diversity_score, top_genres } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -80,28 +83,10 @@ export default async function Home() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
         
-        {/* Widget 1: Top Artist (Hero) */}
-        {top_artists?.[0] && (
-          <GlassWidget className="md:col-span-2 md:row-span-2 relative overflow-hidden group">
-            <div className="absolute inset-0">
-               <Image 
-                 src={top_artists[0].image || '/placeholder.png'} 
-                 alt={top_artists[0].name}
-                 fill
-                 className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-            </div>
-            
-            <div className="relative z-10 h-full flex flex-col justify-end p-6">
-               <span className="bg-green-500/90 text-black text-xs font-bold px-2 py-1 rounded w-fit mb-2">#1 ARTIST</span>
-               <h3 className="text-4xl font-bold">{top_artists[0].name}</h3>
-               <p className="text-white/80 mt-1 capitalize">{top_genres?.[0]?.name || 'Unknown Genre'}</p>
-            </div>
-          </GlassWidget>
-        )}
+        {/* Widget 1: Top Artist (Dynamic) */}
+        <TopArtistsWidget />
 
-        {/* Widget 2: Diversity Score */}
+        {/* Widget 2: Diversity Score (Keep static for now as it needs complex analysis) */}
         <GlassWidget className="md:col-span-2 row-span-1 p-6 flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10">
            <div>
              <div className="flex items-center gap-2 mb-2">
@@ -129,7 +114,7 @@ export default async function Home() {
            </div>
         </GlassWidget>
 
-        {/* Widget 3: Top Genres List */}
+        {/* Widget 3: Top Genres (Static from snapshot is fine for now, avoiding overload) */}
         <GlassWidget className="md:col-span-1 row-span-1 p-5 overflow-hidden">
            <div className="flex items-center gap-2 mb-4 text-white/70">
              <Disc className="w-4 h-4" />
@@ -147,32 +132,13 @@ export default async function Home() {
            </ul>
         </GlassWidget>
 
-        {/* Widget 4: Top Tracks List */}
-        <GlassWidget className="md:col-span-1 md:row-span-2 overflow-hidden flex flex-col">
-            <GlassHeader className="flex justify-between items-center bg-white/5">
-               <span className="font-semibold flex items-center gap-2">
-                 <Music2 className="w-4 h-4" /> Top Tracks
-               </span>
-            </GlassHeader>
-            <div className="overflow-y-auto flex-1 p-2 space-y-1">
-              {top_tracks?.map((track: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors group">
-                  <div className="text-xs text-white/30 w-4 font-mono">{i + 1}</div>
-                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-white/10">
-                     {track.album && (
-                       <Image src={track.album} alt={track.name} fill className="object-cover" />
-                     )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate text-white/90 group-hover:text-green-400 transition-colors">{track.name}</div>
-                    <div className="text-xs text-white/50 truncate">{track.artist}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-        </GlassWidget>
+        {/* Widget 4: Top Tracks (Dynamic) */}
+        <TopTracksWidget />
 
-         {/* Widget 5: Quick Action */}
+        {/* Widget 5: Top Albums (New Dynamic) */}
+        <TopAlbumsWidget />
+
+         {/* Widget 6: Quick Action */}
          <GlassWidget className="md:col-span-1 row-span-1 flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
            <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
              <Play className="fill-current translate-x-0.5 w-5 h-5" />
