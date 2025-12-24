@@ -72,29 +72,41 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
         
+        {/* Row 0: Now Playing (Full Width, conditionally rendered inside component) */}
         <NowPlayingWidget />
 
-        {/* Widget 1: Top Artist (Dynamic) */}
-        <TopArtistsWidget />
-        {/* Widget 2: Top Genres (Dynamic) */}
-        <TopGenresWidget />
+        {/* Row 1: Top Artist (2 cols) + Top Genres (1 col) + Quick Action (1 col) */}
+        <div className="md:col-span-2 md:row-span-2">
+            <TopArtistsWidget />
+        </div>
+        <div className="md:col-span-1 md:row-span-1">
+             <TopGenresWidget />
+        </div>
+        <div className="md:col-span-1 md:row-span-1">
+             {/* Widget 5: Quick Action - Moved here to fill gap */}
+             <GlassWidget className="h-full flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
+                <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <Play className="fill-current translate-x-0.5 w-5 h-5" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg leading-tight">Create Playlist</h3>
+                    <p className="text-xs text-white/50 mt-1">Based on recent</p>
+                </div>
+            </GlassWidget>
+        </div>
 
-        {/* Widget 3: Top Tracks (Dynamic) */}
-        <TopTracksWidget />
-
-        {/* Widget 4: Top Albums (New Dynamic) */}
-        <TopAlbumsWidget />
-
-         {/* Widget 5: Quick Action */}
-         <GlassWidget className="md:col-span-1 row-span-1 flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
-           <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-             <Play className="fill-current translate-x-0.5 w-5 h-5" />
-           </div>
-           <div>
-             <h3 className="font-bold text-lg leading-tight">Create Playlist</h3>
-             <p className="text-xs text-white/50 mt-1">Based on your recent discovery</p>
-           </div>
-        </GlassWidget>
+        {/* Row 2: Top Tracks (1 col) + Top Albums (1 col) ... wait, let's re-arrange for better fit */}
+        {/* Let's try:
+            Row 1: Artist (2x2), Tracks (1x2), Genres (1x1) / Albums (1x1)
+        */}
+        
+        <div className="md:col-span-1 md:row-span-2 relative">
+             <TopTracksWidget />
+        </div>
+        
+        <div className="md:col-span-1 md:row-span-1">
+             <TopAlbumsWidget />
+        </div>
 
       </div>
     </div>

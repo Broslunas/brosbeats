@@ -29,7 +29,7 @@ export function TopTracksWidget() {
   }, [range]);
 
   return (
-    <GlassWidget className="md:col-span-1 md:row-span-2 overflow-hidden flex flex-col min-h-[400px]">
+    <GlassWidget className="overflow-hidden flex flex-col h-full min-h-[360px]">
       <div className="p-4 border-b border-white/5 flex flex-col gap-3">
         <div className="flex items-center justify-between">
              <span className="font-semibold flex items-center gap-2 text-sm">

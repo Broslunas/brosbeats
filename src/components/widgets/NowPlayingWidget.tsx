@@ -58,7 +58,7 @@ export function NowPlayingWidget() {
   const progressPercent = (elapsed / data.track.durationMs) * 100;
 
   return (
-    <GlassWidget className="md:col-span-2 row-span-1 relative overflow-hidden group min-h-[160px]">
+    <GlassWidget className="md:col-span-4 row-span-1 relative overflow-hidden group min-h-[160px]">
       {/* Background with blur */}
       <div className="absolute inset-0">
           <Image 

@@ -31,7 +31,7 @@ export function TopArtistsWidget() {
   const topArtist = data[0];
 
   return (
-    <GlassWidget className="md:col-span-2 md:row-span-2 relative overflow-hidden group min-h-[300px]">
+    <GlassWidget className="relative overflow-hidden group min-h-[360px] h-full">
         {/* Background Image of #1 Artist */}
         {topArtist && (
             <div className="absolute inset-0 transition-opacity duration-700">

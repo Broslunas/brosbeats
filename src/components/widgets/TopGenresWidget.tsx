@@ -28,7 +28,7 @@ export function TopGenresWidget() {
   }, [range]);
 
   return (
-    <GlassWidget className="md:col-span-1 row-span-1 p-5 overflow-hidden flex flex-col min-h-[300px]">
+    <GlassWidget className="p-5 overflow-hidden flex flex-col h-full min-h-[170px]">
       <div className="flex flex-col gap-3 mb-2 border-b border-white/5 pb-2">
          <div className="flex items-center gap-2 text-white/70">
            <Disc className="w-4 h-4" />
