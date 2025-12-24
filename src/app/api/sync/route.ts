@@ -3,6 +3,10 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { SyncService } from "@/services/syncService";
 import { NextResponse } from "next/server";
 
+export async function GET() {
+  return NextResponse.json({ error: "Method not allowed. Use POST." }, { status: 405 });
+}
+
 export async function POST() {
   const session = await getServerSession(authOptions);
 

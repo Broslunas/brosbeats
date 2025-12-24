@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 import { LoadingState } from "@/components/LoadingState";
+import { RefreshButton } from "@/components/RefreshButton";
 
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
@@ -74,9 +75,7 @@ export default async function Home() {
            <h2 className="text-3xl font-bold">Your Overview</h2>
            <p className="text-white/50">Last updated: {new Date(data.created_at).toLocaleDateString()}</p>
         </div>
-        <Link href="/api/sync" className="text-xs text-green-400 hover:text-green-300 transition-colors">
-          Refresh Data
-        </Link>
+        <RefreshButton />
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
