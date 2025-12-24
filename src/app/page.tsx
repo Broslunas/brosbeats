@@ -86,35 +86,16 @@ export default async function Home() {
         
         {/* Widget 1: Top Artist (Dynamic) */}
         <TopArtistsWidget />
-
-        {/* Widget 2: Diversity Score (Keep static for now as it needs complex analysis) */}
-        <GlassWidget className="md:col-span-2 row-span-1 p-6 flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10">            
-           <div className="relative w-24 h-24 flex items-center justify-center">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <path className="text-white/10" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                <path 
-                  className="text-purple-500 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
-                  strokeDasharray={`${diversity_score * 100}, 100`}
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="3" 
-                />
-              </svg>
-              <div className="absolute text-xl font-bold">{Math.round(diversity_score * 100)}%</div>
-           </div>
-        </GlassWidget>
-
-        {/* Widget 3: Top Genres (Dynamic) */}
+        {/* Widget 2: Top Genres (Dynamic) */}
         <TopGenresWidget />
 
-        {/* Widget 4: Top Tracks (Dynamic) */}
+        {/* Widget 3: Top Tracks (Dynamic) */}
         <TopTracksWidget />
 
-        {/* Widget 5: Top Albums (New Dynamic) */}
+        {/* Widget 4: Top Albums (New Dynamic) */}
         <TopAlbumsWidget />
 
-         {/* Widget 6: Quick Action */}
+         {/* Widget 5: Quick Action */}
          <GlassWidget className="md:col-span-1 row-span-1 flex flex-col justify-between p-6 bg-gradient-to-br from-green-500/20 to-transparent hover:from-green-500/30 cursor-pointer group transition-all">
            <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
              <Play className="fill-current translate-x-0.5 w-5 h-5" />
