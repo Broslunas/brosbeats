@@ -11,7 +11,12 @@ import { supabase } from "@/lib/supabase";
 
 export function Dock() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [profileName, setProfileName] = useState<string | null>(null);
+
+  // Hide Dock on Landing Page if not logged in, or always on Landing?
+  // User asked to separate Landing from App. Usually Landing doesn't have app nav.
+  if (pathname === "/") return null;
 
   useEffect(() => {
     async function fetchProfileName() {
@@ -38,7 +43,7 @@ export function Dock() {
   return (
     <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <div className="glass-panel px-4 py-3 rounded-2xl flex items-center gap-4 hover:scale-[1.02] transition-transform duration-300">
-        <DockItem href="/" icon={Home} label="Home" />
+        <DockItem href="/app" icon={Home} label="Home" />
         <DockItem href="/stats" icon={BarChart2} label="Stats" />
         <DockItem href="/share" icon={Share2} label="Share" />
         <DockItem href="/chat" icon={MessageSquare} label="AI Chat" />
