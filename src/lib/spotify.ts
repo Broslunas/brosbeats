@@ -48,5 +48,24 @@ export const spotifyApi = {
         accessToken,
         endpoint: `/me/player/recently-played?limit=${limit}`,
      })
+  },
+
+  getCurrentlyPlaying: async (accessToken: string) => {
+    // This endpoint can return 204 (No Content) if nothing is playing
+    // fetchSpotify handles JSON parsing, so we need to be careful with empty responses
+    const res = await fetch(`${SPOTIFY_API_BASE}/me/player/currently-playing`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (res.status === 204) {
+      return null;
+    }
+    
+    if (!res.ok) {
+       // Silent fail or throw? For now let's just return null to avoid breaking UI
+       return null;
+    }
+
+    return res.json() as Promise<SpotifyApi.CurrentlyPlayingResponse>;
   }
 };

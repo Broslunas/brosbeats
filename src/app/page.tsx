@@ -11,6 +11,7 @@ import { TopArtistsWidget } from "@/components/widgets/TopArtistsWidget";
 import { TopTracksWidget } from "@/components/widgets/TopTracksWidget";
 import { TopAlbumsWidget } from "@/components/widgets/TopAlbumsWidget";
 import { TopGenresWidget } from "@/components/widgets/TopGenresWidget";
+import { NowPlayingWidget } from "@/components/widgets/NowPlayingWidget";
 
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
@@ -82,8 +83,11 @@ export default async function Home() {
         <RefreshButton />
       </header>
 
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
         
+        <NowPlayingWidget />
+
         {/* Widget 1: Top Artist (Dynamic) */}
         <TopArtistsWidget />
         {/* Widget 2: Top Genres (Dynamic) */}
