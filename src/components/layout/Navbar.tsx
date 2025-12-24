@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Home, BarChart2, MessageSquare, Settings } from "lucide-react";
+import { Menu, Home, BarChart2, MessageSquare, Settings, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ export function Navbar() {
         <div className="absolute top-16 right-4 w-48 glass-panel rounded-2xl p-2 flex flex-col gap-1 animate-in slide-in-from-top-2 fade-in duration-200">
            <NavLink href="/" icon={Home} label="Home" />
            <NavLink href="/stats" icon={BarChart2} label="Stats" />
+           <NavLink href="/share" icon={Share2} label="Share" />
            <NavLink href="/chat" icon={MessageSquare} label="AI Chat" />
            <NavLink href="/settings" icon={Settings} label="Settings" />
         </div>

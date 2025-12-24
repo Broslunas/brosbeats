@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, BarChart2, MessageSquare, Settings, User } from "lucide-react";
+import { Home, BarChart2, MessageSquare, Settings, User, Share2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ export function Dock() {
       <div className="glass-panel px-4 py-3 rounded-2xl flex items-center gap-4 hover:scale-[1.02] transition-transform duration-300">
         <DockItem href="/" icon={Home} label="Home" />
         <DockItem href="/stats" icon={BarChart2} label="Stats" />
+        <DockItem href="/share" icon={Share2} label="Share" />
         <DockItem href="/chat" icon={MessageSquare} label="AI Chat" />
         
         <div className="w-[1px] h-8 bg-white/10 mx-1" /> {/* Divider */}
