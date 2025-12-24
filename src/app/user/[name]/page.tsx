@@ -9,14 +9,17 @@ import { notFound } from "next/navigation";
 // Revalidate public profiles every 5 minutes
 export const revalidate = 300;
 
-async function getPublicProfile(spotifyId: string) {
+async function getPublicProfile(name: string) {
   if (!supabaseAdmin) return null;
 
-  // 1. Get User by Spotify ID
+  // 1. Get User by Name
+  // We decode the URL component to ensure we match the name in DB correctly (e.g. spaces)
+  const decodedName = decodeURIComponent(name);
+  
   const { data: user } = await supabaseAdmin
     .from("users")
     .select("id, name, avatar_url, spotify_id")
-    .eq("spotify_id", spotifyId)
+    .ilike("name", decodedName)
     .single();
 
   if (!user) return null;
@@ -45,10 +48,11 @@ async function getPublicProfile(spotifyId: string) {
   return { user, stats: snapshot, isPrivate: false };
 }
 
-export default async function UserProfile({ params }: { params: { name: string } }) {
+export default async function UserProfile({ params }: { params: Promise<{ name: string }> }) {
   // params.name corresponds to the dynamic route segment [name]
+  const { name } = await params;
   // In our case we are using spotify_id as the identifier for now
-  const profile = await getPublicProfile(params.name);
+  const profile = await getPublicProfile(name);
 
   if (!profile) {
     notFound();

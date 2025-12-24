@@ -11,29 +11,29 @@ import { supabase } from "@/lib/supabase";
 
 export function Dock() {
   const { data: session } = useSession();
-  const [spotifyId, setSpotifyId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchSpotifyId() {
+    async function fetchProfileName() {
       if (session?.user?.email) {
         // We can fetch this from our API or directly from Supabase if we have public read access
         // For security, let's use a small server utility or API route, BUT for simplicity now:
         // We will assume the user table is readable for authenticated users (as per RLS policy draft)
         const { data } = await supabase
             .from("users")
-            .select("spotify_id")
+            .select("name")
             .eq("email", session.user.email)
             .single();
             
-        if (data?.spotify_id) {
-            setSpotifyId(data.spotify_id);
+        if (data?.name) {
+            setProfileName(data.name);
         }
       }
     }
-    fetchSpotifyId();
+    fetchProfileName();
   }, [session, supabase]);
 
-  const profileLink = spotifyId ? `/user/${spotifyId}` : "/settings"; // Fallback to settings if ID not found yet
+  const profileLink = profileName ? `/user/${encodeURIComponent(profileName)}` : "/settings"; // Fallback to settings if name not found yet
 
   return (
     <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
