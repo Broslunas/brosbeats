@@ -6,8 +6,14 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../ThemeToggle";
 
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { status } = useSession();
+
+  if (status !== "authenticated") return null;
 
   return (
     <nav className="md:hidden fixed top-0 w-full z-50 px-4 py-3">

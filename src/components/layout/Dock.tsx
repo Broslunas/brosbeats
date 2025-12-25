@@ -10,35 +10,21 @@ import { useSession } from "next-auth/react";
 import { supabase } from "@/lib/supabase";
 
 export function Dock() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
-  const [profileName, setProfileName] = useState<string | null>(null);
 
-  // Hide Dock on Landing Page if not logged in, or always on Landing?
-  // User asked to separate Landing from App. Usually Landing doesn't have app nav.
-  if (pathname === "/") return null;
+  // Navigation Logic Rules:
+  // 1. Only visible if logged in
+  // 2. Hidden on Landing Page ("/") explicitly if desired, though rule 1 covers unauth users. 
+  //    If logged in user visits / they might want nav? User said "solo se muestre si estas loggeado".
+  if (status !== "authenticated") return null;
 
-  useEffect(() => {
-    async function fetchProfileName() {
-      if (session?.user?.email) {
-        // We can fetch this from our API or directly from Supabase if we have public read access
-        // For security, let's use a small server utility or API route, BUT for simplicity now:
-        // We will assume the user table is readable for authenticated users (as per RLS policy draft)
-        const { data } = await supabase
-            .from("users")
-            .select("name")
-            .eq("email", session.user.email)
-            .single();
-            
-        if (data?.name) {
-            setProfileName(data.name);
-        }
-      }
-    }
-    fetchProfileName();
-  }, [session, supabase]);
-
-  const profileLink = profileName ? `/user/${encodeURIComponent(profileName)}` : "/settings"; // Fallback to settings if name not found yet
+  // Derive profile link directly from session to avoid client-side DB calls (fixes 406 error)
+  const user = session?.user;
+  const profileName = user?.name;
+  
+  // If name is available, link to profile, otherwise fallback to settings to set up profile
+  const profileLink = profileName ? `/user/${encodeURIComponent(profileName)}` : "/settings";
 
   return (
     <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-50">

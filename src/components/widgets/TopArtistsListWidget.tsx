@@ -73,8 +73,8 @@ export function TopArtistsListWidget({ initialData }: TopArtistsListWidgetProps)
                 <div key={artist.id} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors group">
                   <div className="text-xs text-white/30 w-4 font-mono text-center">{i + 1}</div>
                   <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white/10 group-hover:scale-110 transition-transform border border-white/10">
-                     {artist.images?.[0] && (
-                       <Image src={artist.images[0].url} alt={artist.name} fill className="object-cover" />
+                     {true && (
+                       <Image src={artist.images?.[0]?.url || '/placeholder.png'} alt={artist.name} fill className="object-cover" />
                      )}
                   </div>
                   <div className="min-w-0 flex-1">
