@@ -77,4 +77,49 @@ create table public.streaming_history (
 );
 
 -- Index for faster queries
-create index streaming_history_user_id_played_at_idx on public.streaming_history(user_id, played_at);
+create index if not exists streaming_history_user_id_played_at_idx on public.streaming_history(user_id, played_at);
+
+-- 5. RPC Function to aggregate stats effectively
+create or replace function public.calculate_user_stats(target_user_id uuid)
+returns json
+language plpgsql
+as $$
+declare
+  total_ms bigint;
+  top_artists json;
+  top_tracks json;
+begin
+  -- 1. Total Listening Time
+  select coalesce(sum(ms_played), 0) into total_ms
+  from public.streaming_history
+  where user_id = target_user_id;
+
+  -- 2. Top Artists (by Time Played)
+  select json_agg(t) into top_artists from (
+    select artist_name as name, sum(ms_played) as ms, count(*) as play_count
+    from public.streaming_history
+    where user_id = target_user_id
+    and artist_name is not null
+    group by artist_name
+    order by sum(ms_played) desc
+    limit 20
+  ) t;
+
+  -- 3. Top Tracks (by Time Played)
+  select json_agg(t) into top_tracks from (
+    select track_name as name, artist_name as artist, sum(ms_played) as ms, count(*) as play_count
+    from public.streaming_history
+    where user_id = target_user_id
+    and track_name is not null
+    group by track_name, artist_name
+    order by sum(ms_played) desc
+    limit 20
+  ) t;
+
+  return json_build_object(
+    'total_minutes', total_ms / 60000,
+    'top_artists', coalesce(top_artists, '[]'::json),
+    'top_tracks', coalesce(top_tracks, '[]'::json)
+  );
+end;
+$$;
