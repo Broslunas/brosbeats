@@ -6,7 +6,8 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { importSpotifyData } from "@/app/actions/import-spotify"; // Server Action
+import { saveSpotifyHistory } from "@/app/actions/save-spotify-history";
+import JSZip from "jszip";
 
 interface SettingsFormProps {
   user: {
@@ -50,21 +51,100 @@ export function SettingsForm({ user, initialPrivacy }: SettingsFormProps) {
     if (!file) return;
 
     setImporting(true);
-    setImportStatus("Uploading & Processing...");
-
-    const formData = new FormData();
-    formData.append("file", file);
+    setImportStatus("Reading file...");
 
     try {
-      // Use Server Action directly
-      const result = await importSpotifyData(null, formData);
+        let historyItems: any[] = [];
+        let processedFiles = 0;
+
+        if (file.name.toLowerCase().endsWith(".zip")) {
+            const zip = await JSZip.loadAsync(file);
+            
+            // Iterate over all files in the zip
+            const entries = Object.keys(zip.files);
+            setImportStatus(`Found ${entries.length} files in zip...`);
+
+            for (const filename of entries) {
+                const entry = zip.files[filename];
+                if (!entry.dir && filename.toLowerCase().endsWith(".json")) {
+                    const content = await entry.async("string");
+                    try {
+                        const json = JSON.parse(content);
+                        if (Array.isArray(json)) {
+                            historyItems.push(...json);
+                            processedFiles++;
+                        }
+                    } catch (e) {
+                         console.warn("Invalid JSON in zip:", filename);
+                    }
+                }
+            }
+        } else if (file.name.toLowerCase().endsWith(".json")) {
+             const text = await file.text();
+             const json = JSON.parse(text);
+             if (Array.isArray(json)) historyItems = json;
+        } else {
+            throw new Error("Unsupported file type");
+        }
+
+        if (historyItems.length === 0) {
+            throw new Error("No valid JSON history found");
+        }
+
+        setImportStatus(`Found ${historyItems.length} items. Normalizing...`);
+
+        // Client-side Normalization
+        const validTracks = historyItems.map((item) => {
+            // Standard Format
+            if (item.endTime && item.artistName && item.trackName) {
+                return {
+                    played_at: item.endTime,
+                    artist_name: item.artistName,
+                    track_name: item.trackName,
+                    ms_played: item.msPlayed,
+                    platform: "spotify_import_standard"
+                };
+            }
+            // Extended Format
+            if (item.ts && item.master_metadata_track_name) {
+                return {
+                    played_at: item.ts,
+                    artist_name: item.master_metadata_album_artist_name || "Unknown",
+                    track_name: item.master_metadata_track_name,
+                    album_name: item.master_metadata_album_album_name,
+                    ms_played: item.ms_played,
+                    spotify_track_uri: item.spotify_track_uri,
+                    platform: item.platform || "spotify_import_extended"
+                };
+            }
+            return null;
+        }).filter(item => item && item.ms_played > 30000);
+
+        if (validTracks.length === 0) {
+            throw new Error("No music tracks found (only short plays or podcasts?)");
+        }
+
+        // Upload in batches
+        const BATCH_SIZE = 2000;
+        const totalBatches = Math.ceil(validTracks.length / BATCH_SIZE);
+        let totalImported = 0;
+
+        for (let i = 0; i < validTracks.length; i += BATCH_SIZE) {
+             const batch = validTracks.slice(i, i + BATCH_SIZE);
+             const currentBatchNum = Math.floor(i / BATCH_SIZE) + 1;
+             
+             setImportStatus(`Uploading batch ${currentBatchNum}/${totalBatches}...`);
+             
+             const result = await saveSpotifyHistory(batch);
+             if (result.error) throw new Error(result.error);
+             
+             totalImported += (result.count || 0);
+        }
       
-      if (result.error) throw new Error(result.error);
-      
-      setImportStatus(`Success! Imported ${result.count} tracks.`);
-            // Clear status after 5s
+      setImportStatus(`Success! Imported ${totalImported} tracks.`);
       setTimeout(() => setImportStatus(null), 5000);
       router.refresh();
+      
     } catch (err: any) {
       console.error("Import error:", err);
       setImportStatus(`Error: ${err.message}`);
