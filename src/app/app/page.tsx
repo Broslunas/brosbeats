@@ -100,12 +100,16 @@ async function getData(email: string) {
       if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
           const artMap = new Map();
           (snapshot?.top_tracks || []).forEach((t: any) => {
-               if (t.name && t.album) artMap.set(t.name.toLowerCase(), t.album);
+               // Use composite key to avoid collisions on common track names like "Intro" or "Home"
+               if (t.name && t.artist && t.album) {
+                   artMap.set(`${t.name}:${t.artist}`.toLowerCase(), t.album);
+               }
           });
 
            // Identify missing images (Tracks)
           const tracksWithImages = await Promise.all(historyStats.top_tracks.map(async (t: any) => {
-               let albumUrl = artMap.get(t.name.toLowerCase()) || null;
+               // Use composite key lookup
+               let albumUrl = artMap.get(`${t.name}:${t.artist}`.toLowerCase()) || null;
 
                if (!albumUrl && accessToken && t.name) {
                   try {
