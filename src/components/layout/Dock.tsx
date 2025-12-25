@@ -36,7 +36,6 @@ export function Dock() {
         
         <div className="w-[1px] h-8 bg-white/10 mx-1" /> {/* Divider */}
         
-        <ThemeToggle />
         <DockItem href={profileLink} icon={User} label="Profile" />
         <DockItem href="/settings" icon={Settings} label="Settings" />
       </div>

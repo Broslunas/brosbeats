@@ -21,13 +21,13 @@ export function Navbar() {
         <div className="flex items-center gap-2">
            {/* Logo placeholder */}
            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center font-bold text-xs">
-             AI
+             BB
            </div>
-           <span className="font-bold text-sm tracking-wide">Spotify AI</span>
+           <span className="font-bold text-sm tracking-wide">BrosBeats</span>
         </div>
         
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          
           <button 
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 hover:bg-white/10 rounded-full transition-colors"
