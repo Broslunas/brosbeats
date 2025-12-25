@@ -67,5 +67,13 @@ export const spotifyApi = {
     }
 
     return res.json() as Promise<SpotifyApi.CurrentlyPlayingResponse>;
+  },
+
+  search: async (accessToken: string, query: string, type: 'artist' | 'track', limit = 1) => {
+    const q = encodeURIComponent(query);
+    return fetchSpotify<any>({
+        accessToken,
+        endpoint: `/search?q=${q}&type=${type}&limit=${limit}`,
+    });
   }
 };

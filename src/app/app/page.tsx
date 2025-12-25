@@ -19,6 +19,8 @@ import { redirect } from "next/navigation";
 // Revalidate data every minute so it feels fresh but efficient
 export const revalidate = 60;
 
+import { spotifyApi } from "@/lib/spotify";
+
 async function getData(email: string) {
   if (!supabaseAdmin) return null;
 
@@ -32,7 +34,6 @@ async function getData(email: string) {
   if (!user) return null;
 
   // 2. Get User Snapshot
-  // We get the most recent one
   const { data: snapshot } = await supabaseAdmin
     .from("stats_snapshots")
     .select("*")
@@ -45,43 +46,81 @@ async function getData(email: string) {
   const { data: historyStats, error: rpcError } = await supabaseAdmin
     .rpc('calculate_user_stats', { target_user_id: user.id });
 
-  if (rpcError) {
-      console.warn("RPC calculate_user_stats failed:", rpcError.message);
-  }
+  if (rpcError) console.warn("RPC calculate_user_stats failed:", rpcError.message);
 
-  // Merge Data
+  // 4. Merge Data & Backfill Images
   let refinedStats = snapshot || {};
 
   if (historyStats) {
-      // 1. Total Minutes
       if (historyStats.total_minutes > 0) {
           refinedStats.total_minutes_listened = historyStats.total_minutes;
       }
       
-      // 2. Top Artists (Merge images from snapshot if available)
+      // Get Access Token for Image Backfilling
+      // We need a fresh token. If session exists, we might need to refresh it.
+      // For server-side fetching here, we can try to use the session's token if active,
+      // OR better, since we are inside a server component component (Page), call getsession.
+      // But we are in `getData` helper. Let's pass session token to it?
+      // Or just skip if no token. Wait, we need the token.
+      
+      const session = await getServerSession(authOptions);
+      const accessToken = (session as any)?.accessToken;
+
+      // Artists
       if (historyStats.top_artists && historyStats.top_artists.length > 0) {
           const imageMap = new Map();
           (snapshot?.top_artists || []).forEach((a: any) => {
               if (a.name && a.image) imageMap.set(a.name.toLowerCase(), a.image);
           });
 
-          refinedStats.top_artists = historyStats.top_artists.map((a: any) => ({
-              ...a,
-              image: imageMap.get(a.name.toLowerCase()) || null 
+          // Identify missing images
+          const artistsWithImages = await Promise.all(historyStats.top_artists.map(async (a: any) => {
+              let imageUrl = imageMap.get(a.name.toLowerCase()) || null;
+
+              // If missing and we have a token, try to fetch ONCE
+              if (!imageUrl && accessToken && a.name !== "Unknown Artist") {
+                  try {
+                      const searchRes = await spotifyApi.search(accessToken, a.name, 'artist', 1);
+                      if (searchRes.artists?.items?.length > 0) {
+                          // Check if name match is close enough?
+                          imageUrl = searchRes.artists.items[0].images?.[0]?.url || null;
+                      }
+                  } catch (e) {
+                      // ignore error to prevent crash
+                  }
+              }
+
+              return { ...a, image: imageUrl };
           }));
+
+          refinedStats.top_artists = artistsWithImages;
       }
 
-      // 3. Top Tracks (Merge album art)
+      // Tracks
       if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
           const artMap = new Map();
           (snapshot?.top_tracks || []).forEach((t: any) => {
                if (t.name && t.album) artMap.set(t.name.toLowerCase(), t.album);
           });
 
-          refinedStats.top_tracks = historyStats.top_tracks.map((t: any) => ({
-              ...t,
-              album: artMap.get(t.name.toLowerCase()) || null
+           // Identify missing images (Tracks)
+          const tracksWithImages = await Promise.all(historyStats.top_tracks.map(async (t: any) => {
+               let albumUrl = artMap.get(t.name.toLowerCase()) || null;
+
+               if (!albumUrl && accessToken && t.name) {
+                  try {
+                       const query = `track:${t.name} artist:${t.artist}`;
+                       const searchRes = await spotifyApi.search(accessToken, query, 'track', 1);
+                       if (searchRes.tracks?.items?.length > 0) {
+                           albumUrl = searchRes.tracks.items[0].album?.images?.[0]?.url || null;
+                       }
+                  } catch (e) {}
+               }
+
+               return { ...t, album: albumUrl };
           }));
+
+          refinedStats.top_tracks = tracksWithImages;
       }
   }
 
