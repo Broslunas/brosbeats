@@ -17,7 +17,7 @@ export function TopTracksWidget({ initialData }: TopTracksWidgetProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (initialData && initialData.length > 0) {
+    if (range === 'all' && initialData && initialData.length > 0) {
         // Map imported structure
         const mapped = initialData.map((t: any) => ({
             id: t.name + t.artist, // Mock ID

@@ -17,7 +17,7 @@ export function TopArtistsListWidget({ initialData }: TopArtistsListWidgetProps)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (initialData && initialData.length > 0) {
+    if (range === 'all' && initialData && initialData.length > 0) {
         // Map imported structure
         const mapped = initialData.map((a: any) => ({
             id: a.name, // Mock ID
