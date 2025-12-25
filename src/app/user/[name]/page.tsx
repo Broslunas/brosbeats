@@ -9,13 +9,15 @@ import { notFound } from "next/navigation";
 // Revalidate public profiles every 5 minutes
 export const revalidate = 300;
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { spotifyApi } from "@/lib/spotify";
+
 async function getPublicProfile(name: string) {
   if (!supabaseAdmin) return null;
 
   // 1. Get User by Name
-  // We decode the URL component to ensure we match the name in DB correctly (e.g. spaces)
   const decodedName = decodeURIComponent(name);
-  
   const { data: user } = await supabaseAdmin
     .from("users")
     .select("id, name, avatar_url, spotify_id")
@@ -31,7 +33,6 @@ async function getPublicProfile(name: string) {
     .eq("user_id", user.id)
     .single();
     
-  // If private, return restricted view
   if (privacy?.status === 'private') {
       return { user, isPrivate: true };
   }
@@ -49,48 +50,99 @@ async function getPublicProfile(name: string) {
   const { data: historyStats, error: rpcError } = await supabaseAdmin
     .rpc('calculate_user_stats', { target_user_id: user.id });
 
-  if (rpcError) {
-      console.warn("RPC calculate_user_stats failed (function might be missing):", rpcError.message);
-  }
+  if (rpcError) console.warn("RPC failed:", rpcError.message);
 
-  // Merge Data
-  // refinedStats will prioritize History > Snapshot
+  // 5. Merge Data & Backfill Images
   let refinedStats = snapshot || {};
-
+  
   if (historyStats) {
-      // 1. Total Minutes
       if (historyStats.total_minutes > 0) {
           refinedStats.total_minutes_listened = historyStats.total_minutes;
       }
-      
-      // 2. Top Artists (Merge images from snapshot if available)
+
+      // Try to get a token to enrich the view (Viewer's token)
+      const session = await getServerSession(authOptions);
+      const accessToken = (session as any)?.accessToken;
+
+      // Artists
       if (historyStats.top_artists && historyStats.top_artists.length > 0) {
-          // Create a map of existing images from snapshot
           const imageMap = new Map();
           (snapshot?.top_artists || []).forEach((a: any) => {
-              if (a.name && a.image) imageMap.set(a.name.toLowerCase(), a.image);
+              const imgUrl = a.image || a.images?.[0]?.url;
+              if (a.name && imgUrl) {
+                  imageMap.set(a.name.toLowerCase().trim(), imgUrl);
+              }
           });
 
-          refinedStats.top_artists = historyStats.top_artists.map((a: any) => ({
-              ...a,
-              image: imageMap.get(a.name.toLowerCase()) || null // Image will be null if not found
+          const artistsWithImages = await Promise.all(historyStats.top_artists.map(async (a: any) => {
+              const cleanName = a.name?.toLowerCase().trim();
+              if (!cleanName) return a;
+              let imageUrl = imageMap.get(cleanName) || null;
+
+              if (!imageUrl && accessToken && a.name !== "Unknown Artist") {
+                  try {
+                      const searchRes = await spotifyApi.search(accessToken, a.name, 'artist', 1);
+                      if (searchRes.artists?.items?.length > 0) {
+                          const foundArtist = searchRes.artists.items[0];
+                          if (foundArtist.name.toLowerCase().includes(cleanName) || cleanName.includes(foundArtist.name.toLowerCase())) {
+                               imageUrl = foundArtist.images?.[0]?.url || null;
+                          }
+                      }
+                  } catch (e) {}
+              }
+              return { ...a, image: imageUrl };
           }));
+          refinedStats.top_artists = artistsWithImages;
       }
 
-      // 3. Top Tracks (Merge album art)
+      // Tracks
       if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
           const artMap = new Map();
+          const trackUris: string[] = [];
+
           (snapshot?.top_tracks || []).forEach((t: any) => {
-               if (t.name && t.album) artMap.set(t.name.toLowerCase(), t.album);
+               if (t.name && t.artist && t.album) {
+                   artMap.set(`${t.name}:${t.artist}`.toLowerCase(), t.album);
+               }
           });
 
-          refinedStats.top_tracks = historyStats.top_tracks.map((t: any) => ({
-              ...t,
-              album: artMap.get(t.name.toLowerCase()) || null
+          historyStats.top_tracks.forEach((t: any) => {
+               if (t.uri && t.uri.startsWith("spotify:track:")) {
+                   trackUris.push(t.uri.split(":")[2]);
+               }
+          });
+
+          // Batch Fetch
+          if (accessToken && trackUris.length > 0) {
+              try {
+                  const tracksRes = await spotifyApi.getTracks(accessToken, trackUris);
+                  tracksRes.tracks.forEach(track => {
+                      if (track && track.album?.images?.[0]?.url) {
+                           const key = `${track.name}:${track.artists[0]?.name}`.toLowerCase();
+                           artMap.set(key, track.album.images[0].url);
+                           artMap.set(track.name.toLowerCase(), track.album.images[0].url);
+                      }
+                  });
+              } catch (e) {}
+          }
+
+          const tracksWithImages = await Promise.all(historyStats.top_tracks.map(async (t: any) => {
+               let albumUrl = artMap.get(`${t.name}:${t.artist}`.toLowerCase());
+               if (!albumUrl) albumUrl = artMap.get(t.name.toLowerCase());
+
+               if (!albumUrl && accessToken && !t.uri) {
+                  try {
+                       const query = `track:${t.name} artist:${t.artist}`;
+                       const searchRes = await spotifyApi.search(accessToken, query, 'track', 1);
+                       if (searchRes.tracks?.items?.length > 0) {
+                           albumUrl = searchRes.tracks.items[0].album?.images?.[0]?.url || null;
+                       }
+                  } catch (e) {}
+               }
+               return { ...t, album: albumUrl };
           }));
+          refinedStats.top_tracks = tracksWithImages;
       }
-      
-      // 4. Genres - History doesn't have genres, keep snapshot or empty
   }
 
   return { user, stats: refinedStats, isPrivate: false };
