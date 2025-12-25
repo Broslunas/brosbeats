@@ -70,23 +70,35 @@ async function getData(email: string) {
       if (historyStats.top_artists && historyStats.top_artists.length > 0) {
           const imageMap = new Map();
           (snapshot?.top_artists || []).forEach((a: any) => {
-              if (a.name && a.image) imageMap.set(a.name.toLowerCase(), a.image);
+              // Handle both flattened 'image' and standard Spotify 'images' array
+              const imgUrl = a.image || a.images?.[0]?.url;
+              if (a.name && imgUrl) {
+                  imageMap.set(a.name.toLowerCase().trim(), imgUrl);
+              }
           });
 
           // Identify missing images
           const artistsWithImages = await Promise.all(historyStats.top_artists.map(async (a: any) => {
-              let imageUrl = imageMap.get(a.name.toLowerCase()) || null;
+              const cleanName = a.name?.toLowerCase().trim();
+              if (!cleanName) return a; // Skip if no name
+
+              let imageUrl = imageMap.get(cleanName) || null;
 
               // If missing and we have a token, try to fetch ONCE
               if (!imageUrl && accessToken && a.name !== "Unknown Artist") {
                   try {
                       const searchRes = await spotifyApi.search(accessToken, a.name, 'artist', 1);
                       if (searchRes.artists?.items?.length > 0) {
-                          // Check if name match is close enough?
-                          imageUrl = searchRes.artists.items[0].images?.[0]?.url || null;
+                          const foundArtist = searchRes.artists.items[0];
+                          // Verify name match to avoid wrong artist (e.g. "Duki" finding "Duki & ...")
+                          // Allow partial match if it starts with the name? 
+                          // Let's be semi-strict.
+                          if (foundArtist.name.toLowerCase().includes(cleanName) || cleanName.includes(foundArtist.name.toLowerCase())) {
+                               imageUrl = foundArtist.images?.[0]?.url || null;
+                          }
                       }
                   } catch (e) {
-                      // ignore error to prevent crash
+                      // ignore error
                   }
               }
 
