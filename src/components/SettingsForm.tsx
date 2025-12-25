@@ -6,6 +6,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { importSpotifyData } from "@/app/actions/import-spotify"; // Server Action
 
 interface SettingsFormProps {
   user: {
@@ -55,15 +56,12 @@ export function SettingsForm({ user, initialPrivacy }: SettingsFormProps) {
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/user/import-data", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
+      // Use Server Action directly
+      const result = await importSpotifyData(null, formData);
       
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      if (result.error) throw new Error(result.error);
       
-      setImportStatus(`Success! Imported ${data.count} tracks.`);
+      setImportStatus(`Success! Imported ${result.count} tracks.`);
             // Clear status after 5s
       setTimeout(() => setImportStatus(null), 5000);
       router.refresh();
