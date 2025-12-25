@@ -107,7 +107,12 @@ begin
 
   -- 3. Top Tracks (by Time Played)
   select json_agg(t) into top_tracks from (
-    select track_name as name, artist_name as artist, sum(ms_played) as ms, count(*) as play_count
+    select 
+        track_name as name, 
+        artist_name as artist, 
+        max(spotify_track_uri) as uri, -- Return the URI!
+        sum(ms_played) as ms, 
+        count(*) as play_count
     from public.streaming_history
     where user_id = target_user_id
     and track_name is not null

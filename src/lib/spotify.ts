@@ -75,5 +75,13 @@ export const spotifyApi = {
         accessToken,
         endpoint: `/search?q=${q}&type=${type}&limit=${limit}`,
     });
+  },
+
+  getTracks: async (accessToken: string, ids: string[]) => {
+      if (ids.length === 0) return { tracks: [] };
+      return fetchSpotify<{ tracks: SpotifyApi.TrackObjectFull[] }>({
+          accessToken,
+          endpoint: `/tracks?ids=${ids.join(',')}`,
+      });
   }
 };

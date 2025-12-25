@@ -111,19 +111,60 @@ async function getData(email: string) {
       // Tracks
       if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
           const artMap = new Map();
+          const artistImgMap = new Map(); // Also collect artist images from tracks!
+          const trackUris: string[] = [];
+
+          // 1. Pre-fill from snapshot and collect URIs
           (snapshot?.top_tracks || []).forEach((t: any) => {
-               // Use composite key to avoid collisions on common track names like "Intro" or "Home"
                if (t.name && t.artist && t.album) {
                    artMap.set(`${t.name}:${t.artist}`.toLowerCase(), t.album);
                }
           });
 
-           // Identify missing images (Tracks)
-          const tracksWithImages = await Promise.all(historyStats.top_tracks.map(async (t: any) => {
-               // Use composite key lookup
-               let albumUrl = artMap.get(`${t.name}:${t.artist}`.toLowerCase()) || null;
+          // Collect valid IDs from imported history
+          historyStats.top_tracks.forEach((t: any) => {
+               // uri format is usually "spotify:track:ID"
+               if (t.uri && t.uri.startsWith("spotify:track:")) {
+                   trackUris.push(t.uri.split(":")[2]);
+               }
+          });
 
-               if (!albumUrl && accessToken && t.name) {
+          // 2. Batch Fetch Tracks from Spotify (Max 50 per request, we have 20 limit so ok)
+          if (accessToken && trackUris.length > 0) {
+              try {
+                  const tracksRes = await spotifyApi.getTracks(accessToken, trackUris);
+                  tracksRes.tracks.forEach(track => {
+                      if (track) {
+                          // Map Track Images
+                           const key = `${track.name}:${track.artists[0]?.name}`.toLowerCase();
+                           if (track.album?.images?.[0]?.url) {
+                               artMap.set(key, track.album.images[0].url);
+                               // Also map by direct name if exact match
+                               artMap.set(track.name.toLowerCase(), track.album.images[0].url);
+                           }
+
+                           // Map Artist Images (Bonus!)
+                           // Track object contains simplified artist, which usually DOES NOT have images. 
+                           // Wait, track.artists is SimplifiedArtistObject. No images there.
+                           // So we still have to fetch artists separately or search for them.
+                           // BUT, we can use the track->album->art as a fallback for the artist if needed? No that's bad.
+                           // Okay, we stick to track images here.
+                      }
+                  });
+              } catch (e) {
+                   console.error("Batch track fetch failed:", e);
+              }
+          }
+
+          // 3. Assign Images
+          const tracksWithImages = await Promise.all(historyStats.top_tracks.map(async (t: any) => {
+               // Try composite key first
+               let albumUrl = artMap.get(`${t.name}:${t.artist}`.toLowerCase());
+               // Try simple name second (fallback)
+               if (!albumUrl) albumUrl = artMap.get(t.name.toLowerCase());
+
+               // Search fallback (only if no URI and no map match)
+               if (!albumUrl && accessToken && !t.uri) {
                   try {
                        const query = `track:${t.name} artist:${t.artist}`;
                        const searchRes = await spotifyApi.search(accessToken, query, 'track', 1);
