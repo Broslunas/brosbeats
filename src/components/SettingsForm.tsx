@@ -1,7 +1,7 @@
 "use client";
 
 import { GlassWidget, GlassHeader, GlassContent } from "@/components/ui/GlassWidget";
-import { User, Lock, Globe, Users, LogOut, Save } from "lucide-react";
+import { User, Lock, Globe, Users, LogOut, Save, Upload, FileJson } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,8 @@ interface SettingsFormProps {
 export function SettingsForm({ user, initialPrivacy }: SettingsFormProps) {
   const [privacy, setPrivacy] = useState(initialPrivacy);
   const [isSaving, setIsSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSave = async () => {
@@ -39,6 +41,37 @@ export function SettingsForm({ user, initialPrivacy }: SettingsFormProps) {
       alert("Failed to save settings");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportStatus("Uploading & Processing...");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/user/import-data", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      
+      setImportStatus(`Success! Imported ${data.count} tracks.`);
+            // Clear status after 5s
+      setTimeout(() => setImportStatus(null), 5000);
+      router.refresh();
+    } catch (err: any) {
+      console.error("Import error:", err);
+      setImportStatus(`Error: ${err.message}`);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -109,6 +142,49 @@ export function SettingsForm({ user, initialPrivacy }: SettingsFormProps) {
                     <Save className="w-4 h-4" />
                     {isSaving ? "Saving..." : "Save Changes"}
                 </button>
+            </div>
+        </GlassContent>
+      </GlassWidget>
+
+      {/* Data Import Section */}
+      <GlassWidget>
+        <GlassHeader className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-blue-400" />
+            <h3 className="font-semibold">Import Data</h3>
+        </GlassHeader>
+        <GlassContent className="space-y-4">
+            <p className="text-sm text-white/60">
+                Import your Spotify streaming history (.zip or .json) to populate your stats.
+                Downloads from Spotify Privacy settings are supported.
+            </p>
+            
+            <div className="relative group">
+                <input 
+                    type="file" 
+                    accept=".zip,.json"
+                    onChange={handleFileUpload}
+                    disabled={importing}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                />
+                <div className={`border-2 border-dashed rounded-xl p-8 transition-colors text-center ${
+                    importing 
+                    ? 'border-blue-500/50 bg-blue-500/5' 
+                    : 'border-white/10 group-hover:border-blue-400/50 group-hover:bg-white/5'
+                }`}>
+                    <div className="flex flex-col items-center gap-3">
+                        <div className={`p-3 rounded-full ${importing ? 'bg-blue-500/20' : 'bg-white/5'}`}>
+                            <FileJson className={`w-6 h-6 ${importing ? 'text-blue-400' : 'text-white/40'}`} />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="font-medium">
+                                {importing ? 'Processing...' : 'Drop your file here'}
+                            </p>
+                            <p className="text-xs text-white/40">
+                                {importStatus || "Supports Standard & Extended History"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </GlassContent>
       </GlassWidget>

@@ -59,3 +59,22 @@ alter table public.stats_snapshots enable row level security;
 
 -- Policies can be refined later, assume authenticated users can read their own data
 create policy "Users can read own data" on public.users for select using (auth.uid() = id);
+
+-- 4. STREAMING HISTORY Table
+-- Stores raw Spotify streaming history
+create table public.streaming_history (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  played_at timestamp with time zone not null,
+  track_name text,
+  artist_name text,
+  album_name text,
+  ms_played int,
+  spotify_track_uri text,
+  platform text,
+  
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Index for faster queries
+create index streaming_history_user_id_played_at_idx on public.streaming_history(user_id, played_at);
