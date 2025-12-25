@@ -7,12 +7,29 @@ import Image from "next/image";
 import { Mic2 } from "lucide-react";
 import { TimeRange } from "@/lib/timeRangeUtils";
 
-export function TopArtistsListWidget() {
+interface TopArtistsListWidgetProps {
+  initialData?: any;
+}
+
+export function TopArtistsListWidget({ initialData }: TopArtistsListWidgetProps) {
   const [range, setRange] = useState<TimeRange>("30d");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (initialData && initialData.length > 0) {
+        // Map imported structure
+        const mapped = initialData.map((a: any) => ({
+            id: a.name, // Mock ID
+            name: a.name,
+            images: a.image ? [{ url: a.image }] : [],
+            genres: ['Imported History'] 
+        }));
+        setData(mapped);
+        setLoading(false);
+        return;
+    }
+
     async function fetchData() {
       setLoading(true);
       try {
@@ -26,7 +43,7 @@ export function TopArtistsListWidget() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, initialData]);
 
   return (
     <GlassWidget className="overflow-hidden flex flex-col h-full min-h-[360px]">

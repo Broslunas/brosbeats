@@ -36,7 +36,7 @@ async function getPublicProfile(name: string) {
       return { user, isPrivate: true };
   }
 
-  // 3. Get Stats
+  // 3. Get Stats (Snapshot)
   const { data: snapshot } = await supabaseAdmin
     .from("stats_snapshots")
     .select("*")
@@ -45,7 +45,55 @@ async function getPublicProfile(name: string) {
     .limit(1)
     .single();
 
-  return { user, stats: snapshot, isPrivate: false };
+  // 4. Get Real-time Stats from History (RPC)
+  const { data: historyStats, error: rpcError } = await supabaseAdmin
+    .rpc('calculate_user_stats', { target_user_id: user.id });
+
+  if (rpcError) {
+      console.warn("RPC calculate_user_stats failed (function might be missing):", rpcError.message);
+  }
+
+  // Merge Data
+  // refinedStats will prioritize History > Snapshot
+  let refinedStats = snapshot || {};
+
+  if (historyStats) {
+      // 1. Total Minutes
+      if (historyStats.total_minutes > 0) {
+          refinedStats.total_minutes_listened = historyStats.total_minutes;
+      }
+      
+      // 2. Top Artists (Merge images from snapshot if available)
+      if (historyStats.top_artists && historyStats.top_artists.length > 0) {
+          // Create a map of existing images from snapshot
+          const imageMap = new Map();
+          (snapshot?.top_artists || []).forEach((a: any) => {
+              if (a.name && a.image) imageMap.set(a.name.toLowerCase(), a.image);
+          });
+
+          refinedStats.top_artists = historyStats.top_artists.map((a: any) => ({
+              ...a,
+              image: imageMap.get(a.name.toLowerCase()) || null // Image will be null if not found
+          }));
+      }
+
+      // 3. Top Tracks (Merge album art)
+      if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
+          const artMap = new Map();
+          (snapshot?.top_tracks || []).forEach((t: any) => {
+               if (t.name && t.album) artMap.set(t.name.toLowerCase(), t.album);
+          });
+
+          refinedStats.top_tracks = historyStats.top_tracks.map((t: any) => ({
+              ...t,
+              album: artMap.get(t.name.toLowerCase()) || null
+          }));
+      }
+      
+      // 4. Genres - History doesn't have genres, keep snapshot or empty
+  }
+
+  return { user, stats: refinedStats, isPrivate: false };
 }
 
 export default async function UserProfile({ params }: { params: Promise<{ name: string }> }) {

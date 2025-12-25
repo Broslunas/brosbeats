@@ -7,12 +7,29 @@ import Image from "next/image";
 import { Music2 } from "lucide-react";
 import { TimeRange } from "@/lib/timeRangeUtils";
 
-export function TopTracksWidget() {
+interface TopTracksWidgetProps {
+  initialData?: any;
+}
+
+export function TopTracksWidget({ initialData }: TopTracksWidgetProps) {
   const [range, setRange] = useState<TimeRange>("30d");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (initialData && initialData.length > 0) {
+        // Map imported structure
+        const mapped = initialData.map((t: any) => ({
+            id: t.name + t.artist, // Mock ID
+            name: t.name,
+            album: { images: t.album ? [{ url: t.album }] : [] },
+            artists: [{ name: t.artist }]
+        }));
+        setData(mapped);
+        setLoading(false);
+        return;
+    }
+
     async function fetchData() {
       setLoading(true);
       try {
@@ -26,7 +43,7 @@ export function TopTracksWidget() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, initialData]);
 
   return (
     <GlassWidget className="overflow-hidden flex flex-col h-full min-h-[360px]">

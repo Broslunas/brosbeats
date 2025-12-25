@@ -7,12 +7,35 @@ import Image from "next/image";
 import { Mic2, AlertCircle } from "lucide-react";
 import { TimeRange } from "@/lib/timeRangeUtils";
 
-export function TopArtistsWidget() {
+interface TopArtistsWidgetProps {
+  initialData?: any;
+}
+
+export function TopArtistsWidget({ initialData }: TopArtistsWidgetProps) {
   const [range, setRange] = useState<TimeRange>("30d");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If we receive initialData (array of artists) and range is 'all_time' (or we just map it as default), use it.
+    // However, our initialData from imported history is static "All time".
+    // So if range is not "30d" (maybe we set default to import view?), we fetch?
+    // Let's prioritize imported data if available and treat it as "Lifetime" view.
+    
+    if (initialData && initialData.length > 0) {
+        // Map imported structure (name, image, ms) to widget structure
+        // Imported: { name, image, play_count, ms }
+        // Widget expects: { name, images: [{url: ...}], genres: [] }
+        const mapped = initialData.map((a: any) => ({
+            name: a.name,
+            images: a.image ? [{ url: a.image }] : [],
+            genres: ['Imported History'] 
+        }));
+        setData(mapped);
+        setLoading(false);
+        return;
+    }
+
     async function fetchData() {
       setLoading(true);
       try {
@@ -26,7 +49,7 @@ export function TopArtistsWidget() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, initialData]);
 
   const topArtist = data[0];
 

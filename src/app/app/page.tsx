@@ -41,7 +41,51 @@ async function getData(email: string) {
     .limit(1)
     .single();
 
-  return snapshot;
+  // 3. Get Real-time Stats from History (RPC)
+  const { data: historyStats, error: rpcError } = await supabaseAdmin
+    .rpc('calculate_user_stats', { target_user_id: user.id });
+
+  if (rpcError) {
+      console.warn("RPC calculate_user_stats failed:", rpcError.message);
+  }
+
+  // Merge Data
+  let refinedStats = snapshot || {};
+
+  if (historyStats) {
+      // 1. Total Minutes
+      if (historyStats.total_minutes > 0) {
+          refinedStats.total_minutes_listened = historyStats.total_minutes;
+      }
+      
+      // 2. Top Artists (Merge images from snapshot if available)
+      if (historyStats.top_artists && historyStats.top_artists.length > 0) {
+          const imageMap = new Map();
+          (snapshot?.top_artists || []).forEach((a: any) => {
+              if (a.name && a.image) imageMap.set(a.name.toLowerCase(), a.image);
+          });
+
+          refinedStats.top_artists = historyStats.top_artists.map((a: any) => ({
+              ...a,
+              image: imageMap.get(a.name.toLowerCase()) || null 
+          }));
+      }
+
+      // 3. Top Tracks (Merge album art)
+      if (historyStats.top_tracks && historyStats.top_tracks.length > 0) {
+          const artMap = new Map();
+          (snapshot?.top_tracks || []).forEach((t: any) => {
+               if (t.name && t.album) artMap.set(t.name.toLowerCase(), t.album);
+          });
+
+          refinedStats.top_tracks = historyStats.top_tracks.map((t: any) => ({
+              ...t,
+              album: artMap.get(t.name.toLowerCase()) || null
+          }));
+      }
+  }
+
+  return refinedStats;
 }
 
 export default async function DashboardPage() {
@@ -59,14 +103,16 @@ export default async function DashboardPage() {
     return <LoadingState userName={session.user.name || undefined} />;
   }
 
-  const { diversity_score, top_genres } = data;
+  const { diversity_score, top_genres, top_artists, top_tracks } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <header className="flex justify-between items-end pb-4 border-b border-white/5">
         <div>
            <h2 className="text-3xl font-bold">Your Overview</h2>
-           <p className="text-white/50">Last updated: {new Date(data.created_at).toLocaleDateString()}</p>
+           <p className="text-white/50">
+               {data.total_minutes_listened > 0 ? "Includes imported history" : "Snapshot data"}
+           </p>
         </div>
         <RefreshButton />
       </header>
@@ -80,7 +126,7 @@ export default async function DashboardPage() {
         {/* Row 1: Top Artist Hero (1 col) + Top Genres (1 col) + Top Albums (1 col) + Action (1 col) */}
         
         <div className="md:col-span-1 md:row-span-1">
-            <TopArtistsWidget />
+            <TopArtistsWidget initialData={top_artists} />
         </div>
         
         <div className="md:col-span-1 md:row-span-1">
@@ -98,11 +144,11 @@ export default async function DashboardPage() {
         {/* Row 2: Top Tracks List (2 col) + Top Artists List (2 col) */}
         
         <div className="md:col-span-2 md:row-span-2 relative">
-             <TopTracksWidget />
+             <TopTracksWidget initialData={top_tracks} />
         </div>
         
         <div className="md:col-span-2 md:row-span-2 relative">
-             <TopArtistsListWidget />
+             <TopArtistsListWidget initialData={top_artists} />
         </div>
 
       </div>
